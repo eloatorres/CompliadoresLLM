@@ -129,15 +129,3 @@ CompiladoresLLM
 
 ---
 
-## Conclusão
-O projeto **CompliadoresLLM** atende a todos os requisitos solicitados:
-
-- Gramática bem definida
-- Parser recursivo descendente completo
-- Árvore sintática funcional e visual
-- Análise FIRST/FOLLOW automatizada
-- Testes robustos com JUnit
-- Interface web limpa e intuitiva
-
-Pronto para apresentação ou entrega! ✅
-
