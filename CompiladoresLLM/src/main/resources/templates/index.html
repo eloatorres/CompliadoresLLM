@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Validador de Expressões</title>
+    <title>Analisador de Código LL(1)</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -64,7 +64,7 @@
             color: #444;
         }
 
-        .resultado, .arvore {
+        .resultado, .arvore, .lexico, .semantico {
             background: #f9f9f9;
             border-left: 4px solid #2c7be5;
             padding: 1rem;
@@ -115,22 +115,71 @@
 </head>
 <body>
 <div class="container">
-    <h1>Validador Sintático LL(1)</h1>
+    <h1>Analisador Léxico, Sintático e Semântico</h1>
 
-    <form action="/validar" method="post">
-        <input type="text" id="expressao" name="expressao" th:value="${expressao}" placeholder="Digite sua expressão..." required>
-        <button type="submit">Validar</button>
+    <form id="form-analisar">
+        <input type="text" id="expressao" placeholder="Digite sua expressão..." required>
+        <button type="submit">Analisar</button>
     </form>
 
-    <div th:if="${resultado}" class="resultado">
-        <h3>Resultado:</h3>
-        <p th:text="${resultado}"></p>
+    <div class="lexico">
+        <h3>Análise Léxica:</h3>
+        <pre id="lexicoResultado">Clique em "Analisar" para ver os tokens...</pre>
     </div>
 
-    <div th:if="${arvoreHtml}" class="arvore tree">
+    <div class="resultado">
+        <h3>Análise Sintática:</h3>
+        <p id="sintaticoResultado">Aguardando análise...</p>
+    </div>
+
+    <div class="arvore tree" style="display:none;">
         <h3>Árvore Sintática:</h3>
-        <div th:utext="${arvoreHtml}"></div>
+        <div id="arvoreSintatica"></div>
+    </div>
+
+    <div class="semantico">
+        <h3>Análise Semântica:</h3>
+        <pre>Ainda não implementada.</pre>
     </div>
 </div>
+
+<script>
+    document.getElementById("form-analisar").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const expressao = document.getElementById("expressao").value;
+
+        try {
+            // Análise Léxica
+            const resLex = await fetch("/api/lexico", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(expressao)  
+});
+            const tokens = await resLex.json();
+            document.getElementById("lexicoResultado").textContent =
+    tokens.map(t =>
+        `[${t.type}] "${t.value}" (linha: ${t.line}, coluna: ${t.column})`
+    ).join("\n");
+
+
+
+                const resSint = await fetch("/api/sintatico", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(expressao)  // <- aqui!
+});
+            const json = await resSint.json();
+            document.getElementById("sintaticoResultado").textContent = json.resultado;
+            document.getElementById("arvoreSintatica").innerHTML = json.arvoreHtml;
+            document.querySelector(".arvore").style.display = "block";
+
+        } catch (e) {
+            document.getElementById("lexicoResultado").textContent = "Erro na análise léxica.";
+            document.getElementById("sintaticoResultado").textContent = "Erro na análise sintática.";
+        }
+    });
+</script>
+
 </body>
 </html>

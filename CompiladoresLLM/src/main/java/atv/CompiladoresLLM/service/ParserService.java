@@ -4,11 +4,12 @@ import atv.CompiladoresLLM.parser.ParseTreeNode;
 import atv.CompiladoresLLM.parser.RecursiveDescentParser;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
 
 @Service
 public class ParserService {
 
-    public String analisarExpressao(String expressao, Model model) {
+    public String analisarExpressao(String expressao, ModelMap model) {
         RecursiveDescentParser parser = new RecursiveDescentParser();
         try {
             ParseTreeNode raiz = parser.parse(expressao);
