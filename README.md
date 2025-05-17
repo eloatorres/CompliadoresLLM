@@ -1,131 +1,176 @@
-# Projeto: CompliadoresLLM
+# Projeto: CompiladoresLLM
 
 ## Visão Geral
-O projeto **CompliadoresLLM** é uma aplicação web em Java com Spring Boot que implementa um **analisador sintático recursivo descendente LL(1)**. O objetivo é:
 
-- Validar a sintaxe de expressões baseadas em uma gramática formal (BNF)
-- Calcular automaticamente os conjuntos **FIRST** e **FOLLOW**
-- Gerar e exibir a **árvore sintática** da expressão analisada
-- Exibir os resultados visualmente em uma página web
-- Executar **testes automatizados** com expressões válidas e inválidas
+**CompiladoresLLM** é uma aplicação web em Java (Spring Boot + Thymeleaf) que integra três fases de compilação para uma linguagem simples:
 
----
+1. **Análise Léxica** – Escaneamento do código-fonte para gerar tokens (identificadores, palavras‑chave, literais, símbolos, comentários, etc.), rastreando linha/coluna.
+2. **Análise Sintática** – Parser recursivo-descendente LL(1) que valida a estrutura de declarações, atribuições e expressões, gerando uma árvore sintática.
+3. **Análise Semântica** – Verificação de declarações, escopo, checagem de tipo em atribuições e operadores, detectando usos indevidos de variáveis.
 
-## Gramática utilizada
+O sistema também:
 
-A gramática usada foi adaptada para forma LL(1):
-
-```
-E  → T E'
-E' → & T E' | | T E' | ε
-T  → F T'
-T' → ^ F T' | ε
-F  → ~ F | ( E ) | id
-```
-
-Essa gramática suporta:
-- Identificadores: `id`
-- Operadores: `&`, `|`, `^`, `~`
-- Agrupamento: parênteses `()`
+* Calcula e exibe os conjuntos **FIRST** e **FOLLOW** para a gramática usando `FirstFollowCalculator`.
+* Fornece testes automatizados (JUnit) para garantir o comportamento do parser.
 
 ---
 
-## Funcionalidades do Projeto
+## Gramática LL(1)
 
-### 1. **Analisador Sintático LL(1)**
-- Implementado em `RecursiveDescentParser.java`
-- Valida se uma expressão está sintaticamente correta
-- Gera uma **árvore sintática** com nós para cada regra aplicada
+```bnf
+Program   → StmtList
+StmtList  → Stmt ( ';' Stmt )*
+Stmt      → Decl | DeclAtrib | Block | Expr
+Decl      → Tipo id
+DeclAtrib → Tipo id '=' Número
+Block     → '{' StmtList '}'
+Expr      → E
+E         → T E'
+E'        → '&' T E' | '|' T E' | ε
+T         → F T'
+T'        → '^' F T' | ε
+F         → '~' F | '(' E ')' | id | Número
 
-### 2. **Árvore Sintática Visual**
-- Gerada pela classe `ParseTreeNode`
-- Convertida em HTML recursivamente em `ParserService`
-- Exibida na tela com estrutura de listas e CSS hierárquico
+Tipo      → 'int' | 'float' | 'string' | 'bool'
+Número    → [0-9]+
+id        → [a-zA-Z_][a-zA-Z0-9_]*
 
-### 3. **Interface Web com Spring Boot + Thymeleaf**
-- Formulário para digitar expressão (`index.html`)
-- Botão para submeter e exibir resultado
-- Mostra mensagem de erro ou árvore sintática se válida
+Comentário, literais string e outros símbolos opcionais são reconhecidos no lexer.
+```
 
-### 4. **Cálculo de FIRST e FOLLOW**
-- Implementado em `FirstFollowCalculator.java`
-- Executa análise completa dos conjuntos FIRST e FOLLOW
-- Usa a mesma gramática do parser
-- Imprime os conjuntos no terminal
+---
 
-**Para rodar o cálculo de FIRST e FOLLOW:**
+## 1. Análise Léxica
+
+Implementada em **`Lexer.java`**. Reconhece:
+
+* **Palavras-chave**: `int`, `float`, `string`, `bool`, `if`, `else`, `while`, `return`, etc.
+* **Identificadores**: nomes de variáveis/funções.
+* **Literais**: números inteiros, strings entre aspas.
+* **Operadores**: `+`, `-`, `*`, `/`, `=`, `&`, `|`, `^`, `~`, comparadores (`<`, `>`), etc.
+* **Delimitadores**: `;`, `,`, `(`, `)`, `{}`, `[]`.
+* **Comentários**: de linha (`//`) e bloco (`/* ... */`).
+* **EOF**: fim de arquivo.
+
+Cada token carrega tipo, lexema, linha e coluna.
+
+---
+
+## 2. Análise Sintática
+
+Implementada em **`RecursiveDescentParser.java`** (LL(1)).
+
+* **Program** e **StmtList** para múltiplas sentenças.
+* **Decl** (declaração) e **DeclAtrib** (decl + atribuição numérica).
+* **Block**: escopo entre chaves.
+* **Expressões** com operadores: unário (`~`), binários (`&`, `|`, `^`), literais, identificadores.
+* Validação de ausência de tokens extras.
+* Em caso de erro, lança `RuntimeException` com mensagem clara.
+
+A árvore sintática é representada por **`ParseTreeNode`** e convertida em HTML pelo **`ParserService`**.
+
+---
+
+## 3. Análise Semântica
+
+Implementada em **`SemanticAnalyzer.java`**:
+
+* **Registro de declarações**: popula tabela de símbolos (nome→tipo).
+* **Verificação de duplicidade**: erro se redeclarar variável.
+* **Checagem de atribuição**: valida compatibilidade de tipo (ex: `int x = 3`).
+* **Verificação de uso**: erro se usar variável não declarada.
+* **Checagem de tipos em expressões**:
+
+  * `~`, `&`, `|` demandam booleanos.
+  * `^` demanda inteiros.
+
+Erros semânticos são coletados e exibidos juntos.
+
+---
+
+## 4. FIRST e FOLLOW
+
+Classe **`FirstFollowCalculator.java`** calcula automaticamente os conjuntos:
+
 ```bash
 mvn compile
-java atv.CompiladoresLLM.parser.FirstFollowCalculator
+java -cp target/classes atv.CompiladoresLLM.parser.FirstFollowCalculator
 ```
 
-### 5. **Testes Automatizados (JUnit)**
-- Arquivo: `RecursiveDescentParserTest.java`
-- Testa diversas expressões válidas e inválidas
-- Garante robustez do analisador sintático
+Imprime:
 
-**Para executar os testes:**
+```
+==== CONJUNTOS FIRST ====
+First(E) = {...}
+...
+==== CONJUNTOS FOLLOW ====
+Follow(E) = {...}
+...
+```
+
+---
+
+## 5. Testes Automatizados
+
+Arquivo: **`RecursiveDescentParserTest.java`**.
+
+Para executar:
+
 ```bash
 mvn test
 ```
 
-Os testes usam:
-- `assertDoesNotThrow` para expressões válidas
-- `assertThrows` para garantir que erros sejam lançados em expressões erradas
+* **Expressões válidas** usam `assertDoesNotThrow()`.
+* **Expressões inválidas** usam `assertThrows()`.
 
 ---
 
-## Como Executar o Projeto
+## 6. Exemplos de Teste
 
-### 1. Iniciar o servidor Spring Boot:
+| Entrada               | Léxico                    | Sintaxe                              | Árvore              | Semântico                                        |
+| --------------------- | ------------------------- | ------------------------------------ | ------------------- | ------------------------------------------------ |
+| `int x;`              | int, x, `;`               | válido (`Decl`)                      | Decl→int, x         | sem erros                                        |
+| `int x = 3;`          | int, x, `=`, 3, `;`       | válido (`DeclAtrib`)                 | DeclAtrib→int, x, 3 | sem erros                                        |
+| `float a = 5; a ^ 2;` | float,..., `^`, 2, `;`    | válido em 2 sentenças (`Program`)    | árvore completa     | sem erros (`^` entre inteiros OK)                |
+| `bool b = ~a;`        | bool, b, `=`, `~`, a, `;` | sintático OK (`DeclAtrib`)           | DeclAtrib→bool,b,\~ | `Erro semântico: operador '~' requer booleano.`  |
+| `{ int y; y & y; }`   | `{`,`int`,`y`,`;`,...     | válido (`Block`)                     | Block→StmtList      | sem erros (`&` em booleanos)                     |
+| `id & 5;`             | id, `&`, 5, `;`           | válido (`Expr`)                      | Expr→E              | `Erro semântico: operador '&' requer booleanos.` |
+| `string s = "ok";`    | string, s, `=`, "ok",`;`  | sintático: erro em literal string    | —                   | —                                                |
+| `int x x;`            | int, x, x, `;`            | erro sintático: token inesperado 'x' | —                   | —                                                |
+
+---
+
+## 7. Como Executar
+
 ```bash
+# 1. Compilar
+mvn compile
+
+# 2. Rodar servidor
 mvn spring-boot:run
 ```
 
-### 2. Acessar no navegador:
-[http://localhost:8080](http://localhost:8080)
+Abra no navegador: [http://localhost:8080](http://localhost:8080)
 
-### 3. Inserir uma expressão e clicar em "Validar":
-- Exibe mensagem de erro ou árvore sintática gerada
+Digite expressões e veja:
 
-### Exemplos de entradas válidas:
-```
-id
-~ id
-id & id
-id | id ^ id
-~ ( id & id )
-```
-
-### Exemplos de entradas inválidas:
-```
-id id
-& id
-id ^ ^ id
-( id
-```
+* **Análise Léxica** (lista de tokens)
+* **Análise Sintática** (mensagem + árvore)
+* **Análise Semântica** (erros ou OK)
 
 ---
 
-## Estrutura do Projeto (src)
+## Estrutura do Projeto
 
 ```
-CompiladoresLLM
-├── controller
-│   └── ParserController.java
-├── service
-│   └── ParserService.java
-├── parser
-│   ├── RecursiveDescentParser.java
-│   ├── ParseTreeNode.java
-│   └── FirstFollowCalculator.java
-├── resources
-│   ├── templates/index.html
-│   └── application.properties
-├── CompiladoresLLMApplication.java
-└── test
-    └── RecursiveDescentParserTest.java
+CompiladoresLLM/
+├── src/main/java/atv/CompiladoresLLM
+│   ├── controller/ParserController.java
+│   ├── service/ParserService.java
+│   ├── parser/
+│   │   ├── RecursiveDescentParser.java
+│   │   ├── ParseTreeNode.java
+│   │   └── FirstFollowCalculator.java
+│   ├── semantic/SemanticAnalyzer.java
+└── src/test/java/... /RecursiveDescentParserTest.java
 ```
-
----
-
