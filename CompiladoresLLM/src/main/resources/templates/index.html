@@ -132,14 +132,14 @@
         <p id="sintaticoResultado">Aguardando análise...</p>
     </div>
 
-    <div class="arvore tree" style="display:none;">
+    <div class="arvore tree">
         <h3>Árvore Sintática:</h3>
         <div id="arvoreSintatica"></div>
     </div>
 
     <div class="semantico">
         <h3>Análise Semântica:</h3>
-        <pre>Ainda não implementada.</pre>
+        <pre id="semanticoResultado">Aguardando análise...</pre>
     </div>
 </div>
 
@@ -152,31 +152,30 @@
         try {
             // Análise Léxica
             const resLex = await fetch("/api/lexico", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(expressao)  
-});
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(expressao)
+            });
             const tokens = await resLex.json();
             document.getElementById("lexicoResultado").textContent =
-    tokens.map(t =>
-        `[${t.type}] "${t.value}" (linha: ${t.line}, coluna: ${t.column})`
-    ).join("\n");
+                tokens.map(t => `[${t.type}] "${t.value}"`).join("\n");
 
-
-
-                const resSint = await fetch("/api/sintatico", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(expressao)  // <- aqui!
-});
+            // Análise Sintática + Árvore + Semântica
+            const resSint = await fetch("/api/sintatico", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(expressao)
+            });
             const json = await resSint.json();
-            document.getElementById("sintaticoResultado").textContent = json.resultado;
-            document.getElementById("arvoreSintatica").innerHTML = json.arvoreHtml;
-            document.querySelector(".arvore").style.display = "block";
+
+            document.getElementById("sintaticoResultado").textContent = json.resultado || "Erro ao processar análise sintática.";
+            document.getElementById("arvoreSintatica").innerHTML = json.arvoreHtml || "";
+            document.getElementById("semanticoResultado").textContent = json.resultadoSemantico || "Sem resultado semântico.";
 
         } catch (e) {
             document.getElementById("lexicoResultado").textContent = "Erro na análise léxica.";
             document.getElementById("sintaticoResultado").textContent = "Erro na análise sintática.";
+            document.getElementById("semanticoResultado").textContent = "Erro na análise semântica.";
         }
     });
 </script>

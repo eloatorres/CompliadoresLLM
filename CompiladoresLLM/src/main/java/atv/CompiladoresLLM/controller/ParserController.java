@@ -9,7 +9,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,6 @@ public class ParserController {
 
     @Autowired
     private ParserService parserService;
-    
 
     @GetMapping("/")
     public String index() {
@@ -45,20 +43,22 @@ public class ParserController {
         return ResponseEntity.ok(lexer.tokenize(expressao));
     }
 
-    // Análise sintática via JSON (usada pelo JS do HTML)
+    // Análise sintática e semântica via JSON
     @PostMapping("/api/sintatico")
     @ResponseBody
     public Map<String, String> analisarSintatico(@RequestBody String expressao) {
         expressao = expressao.replaceAll("^\"|\"$", ""); // Remove aspas extras do JSON
-    
+
         ModelMap model = new ModelMap();
         String resultado = parserService.analisarExpressao(expressao, model);
         String arvoreHtml = (String) model.get("arvoreHtml");
-    
+        String resultadoSemantico = (String) model.get("resultadoSemantico");
+
         Map<String, String> response = new HashMap<>();
         response.put("resultado", resultado);
         response.put("arvoreHtml", arvoreHtml != null ? arvoreHtml : "");
+        response.put("resultadoSemantico", resultadoSemantico != null ? resultadoSemantico : "");
+
         return response;
     }
-    
 }

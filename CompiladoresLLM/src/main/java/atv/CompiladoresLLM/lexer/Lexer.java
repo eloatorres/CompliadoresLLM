@@ -5,150 +5,155 @@ import java.util.List;
 
 public class Lexer {
 
-    private static final String[] KEYWORDS = { "if", "else", "while", "int", "float", "return" };
+    private static final String[] PALAVRAS_CHAVE = {
+        "if", "else", "while", "for", "return", "int", "float", "bool", "string"
+    };
 
-    private boolean isKeyword(String word) {
-        for (String kw : KEYWORDS) {
-            if (kw.equals(word)) return true;
+    private static boolean ehPalavraChave(String palavra) {
+        for (String p : PALAVRAS_CHAVE) {
+            if (p.equals(palavra)) return true;
         }
         return false;
     }
 
     public List<Token> tokenize(String input) {
         List<Token> tokens = new ArrayList<>();
-        int i = 0, line = 1, column = 1;
+        int i = 0, linha = 1, coluna = 1;
 
         while (i < input.length()) {
-            char current = input.charAt(i);
+            char atual = input.charAt(i);
 
-            if (Character.isWhitespace(current)) {
-                if (current == '\n') {
-                    line++;
-                    column = 1;
+            // Espaços e quebras de linha
+            if (Character.isWhitespace(atual)) {
+                if (atual == '\n') {
+                    linha++;
+                    coluna = 1;
                 } else {
-                    column++;
+                    coluna++;
                 }
                 i++;
                 continue;
             }
 
-            int startColumn = column;
+            int colunaInicio = coluna;
 
             // Identificadores e palavras-chave
-            if (Character.isLetter(current)) {
+            if (Character.isLetter(atual)) {
                 StringBuilder sb = new StringBuilder();
                 while (i < input.length() && Character.isLetterOrDigit(input.charAt(i))) {
                     sb.append(input.charAt(i++));
-                    column++;
+                    coluna++;
                 }
-                String word = sb.toString();
-                Token.TokenType type = isKeyword(word) ? Token.TokenType.KEYWORD : Token.TokenType.IDENT;
-                tokens.add(new Token(type, word, line, startColumn));
+                String palavra = sb.toString();
+                Token.TokenType tipo = ehPalavraChave(palavra) ? Token.TokenType.PALAVRA_CHAVE : Token.TokenType.IDENTIFICADOR;
+                tokens.add(new Token(tipo, palavra, linha, colunaInicio));
                 continue;
             }
 
             // Números inteiros
-            if (Character.isDigit(current)) {
+            if (Character.isDigit(atual)) {
                 StringBuilder sb = new StringBuilder();
                 while (i < input.length() && Character.isDigit(input.charAt(i))) {
                     sb.append(input.charAt(i++));
-                    column++;
+                    coluna++;
                 }
-                tokens.add(new Token(Token.TokenType.INT, sb.toString(), line, startColumn));
+                tokens.add(new Token(Token.TokenType.NUMERO_INTEIRO, sb.toString(), linha, colunaInicio));
                 continue;
             }
 
-            // Strings entre aspas
-            if (current == '"') {
+            // Cadeias de caracteres entre aspas
+            if (atual == '"') {
                 StringBuilder sb = new StringBuilder();
-                sb.append(current);
+                sb.append(atual);
                 i++;
-                column++;
-                boolean closed = false;
+                coluna++;
+                boolean fechado = false;
                 while (i < input.length()) {
                     char c = input.charAt(i);
                     sb.append(c);
                     i++;
-                    column++;
+                    coluna++;
                     if (c == '"') {
-                        closed = true;
+                        fechado = true;
                         break;
                     }
                     if (c == '\n') {
-                        line++;
-                        column = 1;
+                        linha++;
+                        coluna = 1;
                     }
                 }
-                String value = sb.toString();
-                if (closed) {
-                    tokens.add(new Token(Token.TokenType.STRING, value, line, startColumn));
-                } else {
-                    tokens.add(new Token(Token.TokenType.UNKNOWN, value, line, startColumn));
-                }
+                String valor = sb.toString();
+                Token.TokenType tipo = fechado ? Token.TokenType.CADEIA : Token.TokenType.DESCONHECIDO;
+                tokens.add(new Token(tipo, valor, linha, colunaInicio));
                 continue;
             }
 
-            // Comentário de linha
-            if (current == '/' && i + 1 < input.length() && input.charAt(i + 1) == '/') {
-                StringBuilder sb = new StringBuilder();
-                sb.append("//");
+            // Comentários de linha
+            if (atual == '/' && i + 1 < input.length() && input.charAt(i + 1) == '/') {
+                StringBuilder sb = new StringBuilder("//");
                 i += 2;
-                column += 2;
+                coluna += 2;
                 while (i < input.length() && input.charAt(i) != '\n') {
                     sb.append(input.charAt(i++));
-                    column++;
+                    coluna++;
                 }
-                tokens.add(new Token(Token.TokenType.COMMENT, sb.toString(), line, startColumn));
+                tokens.add(new Token(Token.TokenType.COMENTARIO, sb.toString(), linha, colunaInicio));
                 continue;
             }
 
-            // Comentário de bloco
-            if (current == '/' && i + 1 < input.length() && input.charAt(i + 1) == '*') {
-                StringBuilder sb = new StringBuilder();
-                sb.append("/*");
+            // Comentários de bloco
+            if (atual == '/' && i + 1 < input.length() && input.charAt(i + 1) == '*') {
+                StringBuilder sb = new StringBuilder("/*");
                 i += 2;
-                column += 2;
-                boolean closed = false;
+                coluna += 2;
+                boolean fechado = false;
                 while (i < input.length()) {
                     char c = input.charAt(i);
                     sb.append(c);
                     if (c == '\n') {
-                        line++;
-                        column = 1;
+                        linha++;
+                        coluna = 1;
                     } else {
-                        column++;
+                        coluna++;
                     }
                     if (c == '*' && i + 1 < input.length() && input.charAt(i + 1) == '/') {
                         sb.append('/');
                         i += 2;
-                        column += 2;
-                        closed = true;
+                        coluna += 2;
+                        fechado = true;
                         break;
                     } else {
                         i++;
                     }
                 }
-                String value = sb.toString();
-                Token.TokenType type = closed ? Token.TokenType.COMMENT : Token.TokenType.UNKNOWN;
-                tokens.add(new Token(type, value, line, startColumn));
+                Token.TokenType tipo = fechado ? Token.TokenType.COMENTARIO : Token.TokenType.DESCONHECIDO;
+                tokens.add(new Token(tipo, sb.toString(), linha, colunaInicio));
                 continue;
             }
 
-            // Símbolos reconhecidos
-            if ("+-*/=;(){}[]<>!&|^~,".indexOf(current) >= 0) {
-                tokens.add(new Token(Token.TokenType.SYMBOL, String.valueOf(current), line, column));
+            // Delimitadores
+            if (";,:" .indexOf(atual) >= 0) {
+                tokens.add(new Token(Token.TokenType.DELIMITADOR, String.valueOf(atual), linha, coluna));
                 i++;
-                column++;
+                coluna++;
                 continue;
             }
 
-            // Qualquer outro caractere é erro
-            tokens.add(new Token(Token.TokenType.UNKNOWN, String.valueOf(current), line, column));
+            // Símbolos e operadores
+            if ("+-*/=(){}[]<>!&|^~".indexOf(atual) >= 0) {
+                tokens.add(new Token(Token.TokenType.SIMBOLO, String.valueOf(atual), linha, coluna));
+                i++;
+                coluna++;
+                continue;
+            }
+
+            // Caractere não reconhecido
+            tokens.add(new Token(Token.TokenType.DESCONHECIDO, String.valueOf(atual), linha, coluna));
             i++;
-            column++;
+            coluna++;
         }
 
-        tokens.add(new Token(Token.TokenType.EOF, "", line, column));
+        tokens.add(new Token(Token.TokenType.EOF, "", linha, coluna));
         return tokens;
     }
 }

@@ -2,8 +2,8 @@ package atv.CompiladoresLLM.service;
 
 import atv.CompiladoresLLM.parser.ParseTreeNode;
 import atv.CompiladoresLLM.parser.RecursiveDescentParser;
+import atv.CompiladoresLLM.semantic.SemanticAnalyzer;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
 
 @Service
@@ -14,8 +14,15 @@ public class ParserService {
         try {
             ParseTreeNode raiz = parser.parse(expressao);
             model.addAttribute("arvoreHtml", gerarHtmlArvore(raiz));
+
+            // 🔽 Análise semântica
+            SemanticAnalyzer semantico = new SemanticAnalyzer();
+            String resultadoSemantico = semantico.analisar(raiz);
+            model.addAttribute("resultadoSemantico", resultadoSemantico);
+
             return "Expressão válida!";
         } catch (Exception e) {
+            model.addAttribute("resultadoSemantico", "Erro semântico: " + e.getMessage());
             return "Erro sintático: " + e.getMessage();
         }
     }

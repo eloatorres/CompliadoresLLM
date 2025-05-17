@@ -2,7 +2,15 @@ package atv.CompiladoresLLM.lexer;
 
 public class Token {
     public enum TokenType {
-        IDENT, INT, FLOAT, STRING, KEYWORD, SYMBOL, COMMENT, WHITESPACE, UNKNOWN, EOF
+        PALAVRA_CHAVE,
+    IDENTIFICADOR,
+    NUMERO_INTEIRO,
+    CADEIA,
+    SIMBOLO,
+    DELIMITADOR,
+    COMENTARIO,
+    DESCONHECIDO,
+    EOF
     }
 
     private final TokenType type;
