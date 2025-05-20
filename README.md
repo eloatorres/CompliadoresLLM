@@ -129,14 +129,14 @@ mvn test
 
 | Entrada               | Léxico                    | Sintaxe                              | Árvore              | Semântico                                        |
 | --------------------- | ------------------------- | ------------------------------------ | ------------------- | ------------------------------------------------ |
-| `int x;`              | int, x, `;`               | válido (`Decl`)                      | Decl→int, x         | sem erros                                        |
-| `int x = 3;`          | int, x, `=`, 3, `;`       | válido (`DeclAtrib`)                 | DeclAtrib→int, x, 3 | sem erros                                        |
-| `float a = 5; a ^ 2;` | float,..., `^`, 2, `;`    | válido em 2 sentenças (`Program`)    | árvore completa     | sem erros (`^` entre inteiros OK)                |
-| `bool b = ~a;`        | bool, b, `=`, `~`, a, `;` | sintático OK (`DeclAtrib`)           | DeclAtrib→bool,b,\~ | `Erro semântico: operador '~' requer booleano.`  |
-| `{ int y; y & y; }`   | `{`,`int`,`y`,`;`,...     | válido (`Block`)                     | Block→StmtList      | sem erros (`&` em booleanos)                     |
-| `id & 5;`             | id, `&`, 5, `;`           | válido (`Expr`)                      | Expr→E              | `Erro semântico: operador '&' requer booleanos.` |
-| `string s = "ok";`    | string, s, `=`, "ok",`;`  | sintático: erro em literal string    | —                   | —                                                |
-| `int x x;`            | int, x, x, `;`            | erro sintático: token inesperado 'x' | —                   | —                                                |
+| `int x `              | int, x,                   | válido (`Decl`)                      | Decl→int, x         | sem erros                                        |
+| `int x = 3 `          | int, x, `=`, 3,           | válido (`DeclAtrib`)                 | DeclAtrib→int, x, 3 | sem erros                                        |
+| `float a = 5; a ^ 2 ` | float,..., `^`, 2,        | válido em 2 sentenças (`Program`)    | árvore completa     | sem erros (`^` entre inteiros OK)                |
+| `bool b = ~a `        | bool, b, `=`, `~`, a,     | sintático OK (`DeclAtrib`)           | DeclAtrib→bool,b,\~ | `Erro semântico: operador '~' requer booleano.`  |
+| `{ int y; y & y  }`   | `{`,`int`,`y`,`;`,...     | válido (`Block`)                     | Block→StmtList      | sem erros (`&` em booleanos)                     |
+| `id & 5 `             | id, `&`, 5,               | válido (`Expr`)                      | Expr→E              | `Erro semântico: operador '&' requer booleanos.` |
+| `string s = "ok" `    | string, s, `=`, "ok",     | sintático: erro em literal string    | —                   | —                                                |
+| `int x x `            | int, x, x,                | erro sintático: token inesperado 'x' | —                   | —                                                |
 
 ---
 
